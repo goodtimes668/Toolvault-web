@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>ToolVault Pro — GT Mann Contracting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;padding:0;font-family:'DM Sans',sans-serif;background:#f4f4f5}
+    .tv-input{width:100%;padding:15px 16px;background:#f9f9f9;border:2px solid #e4e4e7;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;color:#18181b;transition:border-color 0.15s,background 0.15s;-webkit-appearance:none;display:block}
+    .tv-input:focus{border-color:#f59e0b;background:#fffbf0}
+    .tv-label{font-size:12px;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px}
+    .tv-badge{display:inline-flex;align-items:center;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;font-family:'DM Mono',monospace;white-space:nowrap}
+    .tv-card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+    .tv-btn{display:block;width:100%;padding:17px;border:none;border-radius:15px;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center}
+    .fade-in{animation:tvFade 0.2s ease}
+    @keyframes tvFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    textarea.tv-input{resize:vertical;min-height:80px}
+    select.tv-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+    .tag-input-row{display:flex;gap:8px;margin-bottom:8px}
+    .tag-pill{display:inline-flex;align-items:center;gap:6px;background:#f4f4f5;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;color:#3f3f46;margin:4px 4px 4px 0}
+    .tag-pill button{background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:14px;padding:0;line-height:1}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const API = “https://toolvault-slack-backend-production.up.railway.app/api”;
+const CONDITIONS = [“Excellent”,“Good”,“Fair”,“Needs Repair”];
+const COND_COLOR = { Excellent:”#10b981”, Good:”#3b82f6”, Fair:”#f59e0b”, “Needs Repair”:”#ef4444” };
+const DEFAULT_CATEGORIES = [“Power Tools”,“Hand Tools”,“Heavy Equipment”,“Safety Gear”,“Surveying Equipment”,“Compaction Equipment”];
+const SITE_TYPES = [“Residential”,“Commercial”,“Industrial”,“Institutional”];
+
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function fmt(d) { if(!d) return “—”; return new Date(d).toLocaleDateString(“en-US”,{month:“short”,day:“numeric”,year:“numeric”}); }
+function isOverdue(date) { return date && new Date(date)<new Date(); }
+function today() { return new Date().toISOString().split(“T”)[0]; }
+
+// ─── LocalStorage for Job Sites ───────────────────────────────
+function loadSites() { try { return JSON.parse(localStorage.getItem(“tv-jobsites”)||”[]”); } catch { return []; } }
+function saveSites(s) { try { localStorage.setItem(“tv-jobsites”, JSON.stringify(s)); } catch {} }
+
+async function apiFetch(path, options={}) {
+const res = await fetch(`${API}${path}`, {
+headers:{“Content-Type”:“application/json”},
+…options,
+body: options.body ? JSON.stringify(options.body) : undefined,
+});
+if(!res.ok) throw new Error(`HTTP ${res.status}`);
+return res.json();
+}
+
+const api = {
+getTools: () => apiFetch(”/tools”),
+addTool: t => apiFetch(”/tools”,{method:“POST”,body:t}),
+updateTool: (id,d) => apiFetch(`/tools/${id}`,{method:“PUT”,body:d}),
+deleteTool: id => apiFetch(`/tools/${id}`,{method:“DELETE”}),
+getRentals: () => apiFetch(”/rentals”),
+addRental: r => apiFetch(”/rentals”,{method:“POST”,body:r}),
+updateRental: (id,d) => apiFetch(`/rentals/${id}`,{method:“PUT”,body:d}),
+getCategories: () => apiFetch(”/categories”),
+updateCategories: c => apiFetch(”/categories”,{method:“PUT”,body:{categories:c}}),
+getAlerts: () => apiFetch(”/alerts”),
+markAlertsRead: () => apiFetch(”/alerts/read-all”,{method:“PUT”}),
+getManager: () => apiFetch(”/manager”),
+updateManager: n => apiFetch(”/manager”,{method:“PUT”,body:{name:n}}),
+};
+
+function App() {
+const [view,setView] = useState(“dashboard”);
+const [tools,setTools] = useState([]);
+const [categories,setCategories] = useState(DEFAULT_CATEGORIES);
+const [rentals,setRentals] = useState([]);
+const [alerts,setAlerts] = useState([]);
+const [managerName,setManagerName] = useState(“Site Manager”);
+const [jobSites,setJobSites] = useState(loadSites());
+const [loading,setLoading] = useState(true);
+const [error,setError] = useState(null);
+const [showAlerts,setShowAlerts] = useState(false);
+
+const loadAll = async () => {
+try {
+setError(null);
+const [t,c,r,a,m] = await Promise.all([api.getTools(),api.getCategories(),api.getRentals(),api.getAlerts(),api.getManager()]);
+setTools(t); setCategories(c.length?c:DEFAULT_CATEGORIES); setRentals(r); setAlerts(a); setManagerName(m.name);
+} catch(e) { setError(“Cannot connect to server. Check your Railway deployment.”); }
+setLoading(false);
+};
+
+useEffect(()=>{loadAll();},[]);
+
+const updateJobSites = (sites) => { setJobSites(sites); saveSites(sites); };
+
+const activeRentals = rentals.filter(r=>r.status===“active”);
+const overdueRentals = activeRentals.filter(r=>isOverdue(r.expectedReturn));
+const damagedTools = tools.filter(t=>t.damageFlagged||t.condition===“Needs Repair”);
+const availableTools = tools.filter(t=>!activeRentals.find(r=>r.toolId===t.id)&&t.condition!==“Needs Repair”);
+const unread = alerts.filter(a=>!a.read).length;
+
+const navItems = [
+{id:“dashboard”,label:“Home”,emoji:“🏠”},
+{id:“inventory”,label:“Inventory”,emoji:“📦”},
+{id:“checkout”,label:“Out”,emoji:“📤”},
+{id:“checkin”,label:“In”,emoji:“📥”},
+{id:“more”,label:“More”,emoji:“⚙️”},
+];
+
+if(loading) return (
+<div style={{background:”#0f0f0f”,display:“flex”,alignItems:“center”,justifyContent:“center”,height:“100vh”,flexDirection:“column”,gap:16}}>
+<div style={{fontSize:32}}>🔧</div>
+<div style={{color:”#f59e0b”,fontSize:13,letterSpacing:“0.15em”,fontFamily:”‘DM Mono’,monospace”}}>LOADING TOOLVAULT…</div>
+</div>
+);
+
+if(error) return (
+<div style={{background:”#0f0f0f”,display:“flex”,alignItems:“center”,justifyContent:“center”,height:“100vh”,padding:24}}>
+<div style={{background:”#18181b”,borderRadius:20,padding:32,maxWidth:400,textAlign:“center”}}>
+<div style={{fontSize:40,marginBottom:16}}>⚠️</div>
+<div style={{color:”#fff”,fontSize:18,fontWeight:700,marginBottom:8}}>Connection Error</div>
+<div style={{color:”#71717a”,fontSize:14,marginBottom:24,lineHeight:1.6}}>{error}</div>
+<button onClick={loadAll} style={{background:”#f59e0b”,border:“none”,borderRadius:12,padding:“14px 24px”,fontWeight:700,fontSize:15,cursor:“pointer”,width:“100%”,fontFamily:”‘DM Sans’,sans-serif”}}>Try Again</button>
+</div>
+</div>
+);
+
+return (
+<div style={{background:”#f4f4f5”,minHeight:“100vh”}}>
+{/* Top Bar */}
+<div style={{background:”#18181b”,position:“sticky”,top:0,zIndex:50,boxShadow:“0 2px 12px rgba(0,0,0,0.3)”}}>
+<div style={{padding:“13px 18px”,display:“flex”,alignItems:“center”,justifyContent:“space-between”,maxWidth:640,margin:“0 auto”}}>
+<div style={{display:“flex”,alignItems:“center”,gap:11}}>
+<div style={{width:36,height:36,background:”#f59e0b”,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:17}}>🔧</div>
+<div>
+<div style={{fontFamily:”‘DM Mono’,monospace”,color:”#fff”,fontSize:14,fontWeight:500}}>ToolVault Pro</div>
+<div style={{color:”#71717a”,fontSize:11,marginTop:1}}>{managerName} · GT Mann Contracting</div>
+</div>
+</div>
+<div style={{display:“flex”,gap:8}}>
+<button onClick={loadAll} style={{background:”#27272a”,border:“none”,borderRadius:8,width:36,height:36,cursor:“pointer”,fontSize:16}}>🔄</button>
+<button onClick={()=>setShowAlerts(!showAlerts)} style={{position:“relative”,background:”#27272a”,border:“none”,borderRadius:10,width:40,height:40,cursor:“pointer”,fontSize:17}}>
+🔔{unread>0&&<span style={{position:“absolute”,top:6,right:6,width:9,height:9,background:”#ef4444”,borderRadius:“50%”,border:“2px solid #27272a”,display:“block”}}/>}
+</button>
+</div>
+</div>
+</div>
+
+```
+  {/* Alerts Sheet */}
+  {showAlerts&&(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setShowAlerts(false)}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 20px",maxHeight:"75vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <span style={{fontSize:18,fontWeight:800,color:"#18181b"}}>Notifications</span>
+          {unread>0&&<button onClick={async()=>{await api.markAlertsRead();setAlerts(alerts.map(a=>({...a,read:true})));}} style={{background:"none",border:"none",color:"#f59e0b",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Mark read</button>}
+        </div>
+        {alerts.length===0?<div style={{textAlign:"center",color:"#a1a1aa",padding:"40px 0"}}>No notifications</div>
+        :alerts.map(al=>(
+          <div key={al.id} style={{display:"flex",gap:14,padding:"14px 0",borderBottom:"1px solid #f4f4f5"}}>
+            <div style={{width:40,height:40,borderRadius:12,background:al.type==="damage"?"#fef2f2":"#fffbf0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{al.type==="damage"?"🚩":"⏰"}</div>
+            <div><p style={{fontSize:14,color:"#3f3f46",margin:"0 0 4px",lineHeight:1.5}}>{al.message}</p><p style={{fontSize:12,color:"#a1a1aa",margin:0}}>{fmt(al.date)}</p></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Page Content */}
+  <div style={{padding:"22px 16px 110px",maxWidth:640,margin:"0 auto"}} key={view} className="fade-in">
+    {view==="dashboard"&&<Dashboard tools={tools} activeRentals={activeRentals} overdueRentals={overdueRentals} damagedTools={damagedTools} availableTools={availableTools} jobSites={jobSites} setView={setView}/>}
+    {view==="inventory"&&<Inventory tools={tools} categories={categories} rentals={rentals} onRefresh={loadAll}/>}
+    {view==="checkout"&&<CheckOut tools={tools} rentals={rentals} activeRentals={activeRentals} jobSites={jobSites} onRefresh={loadAll}/>}
+    {view==="checkin"&&<CheckIn tools={tools} rentals={rentals} onRefresh={loadAll}/>}
+    {view==="rentals"&&<ActiveRentals tools={tools} rentals={activeRentals} overdueRentals={overdueRentals}/>}
+    {view==="jobsites"&&<JobSites jobSites={jobSites} updateJobSites={updateJobSites}/>}
+    {view==="categories"&&<Categories categories={categories} onRefresh={loadAll}/>}
+    {view==="settings"&&<SettingsPage managerName={managerName} onRefresh={loadAll}/>}
+    {view==="more"&&<More setView={setView} activeRentals={activeRentals} jobSites={jobSites}/>}
+  </div>
+
+  {/* Bottom Nav */}
+  <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderTop:"1px solid #e4e4e7",display:"flex",boxShadow:"0 -4px 20px rgba(0,0,0,0.06)",zIndex:50}}>
+    {navItems.map(({id,label,emoji})=>{
+      const active=view===id||(id==="more"&&["rentals","categories","settings","jobsites"].includes(view));
+      return(
+        <button key={id} onClick={()=>setView(id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"12px 0 10px",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",color:active?"#f59e0b":"#a1a1aa",position:"relative"}}>
+          <span style={{fontSize:22}}>{emoji}</span>
+          <span style={{fontSize:11,fontWeight:active?700:500}}>{label}</span>
+          {active&&<div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:24,height:3,background:"#f59e0b",borderRadius:"0 0 3px 3px"}}/>}
+        </button>
+      );
+    })}
+  </div>
+</div>
+```
+
+);
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────
+function Dashboard({tools,activeRentals,overdueRentals,damagedTools,availableTools,jobSites,setView}) {
+return (
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Dashboard</h1>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:12,marginBottom:24}}>
+<div style={{background:”#18181b”,borderRadius:20,padding:22,gridColumn:“span 2”}}>
+<div style={{color:”#71717a”,fontSize:11,fontWeight:700,letterSpacing:“0.08em”,marginBottom:8}}>TOTAL TOOLS</div>
+<div style={{color:”#fff”,fontSize:52,fontWeight:800,lineHeight:1}}>{tools.length}</div>
+<div style={{color:”#52525b”,fontSize:13,marginTop:6}}>{availableTools.length} available · {activeRentals.length} out · {jobSites.length} active sites</div>
+</div>
+{[
+{n:availableTools.length,label:“Available”,bg:”#f0fdf4”,c:”#059669”,lc:”#065f46”,e:“✅”},
+{n:activeRentals.length,label:“Checked Out”,bg:”#eff6ff”,c:”#2563eb”,lc:”#1e40af”,e:“📤”},
+{n:overdueRentals.length,label:“Overdue”,bg:overdueRentals.length>0?”#fffbeb”:”#fafafa”,c:overdueRentals.length>0?”#b45309”:”#d4d4d8”,lc:overdueRentals.length>0?”#92400e”:”#a1a1aa”,e:“⚠️”},
+{n:damagedTools.length,label:“Damaged”,bg:damagedTools.length>0?”#fef2f2”:”#fafafa”,c:damagedTools.length>0?”#dc2626”:”#d4d4d8”,lc:damagedTools.length>0?”#991b1b”:”#a1a1aa”,e:“🚩”},
+].map(({n,label,bg,c,lc,e})=>(
+<div key={label} style={{background:bg,borderRadius:20,padding:18}}>
+<div style={{fontSize:20,marginBottom:10}}>{e}</div>
+<div style={{fontSize:38,fontWeight:800,color:c,lineHeight:1}}>{n}</div>
+<div style={{fontSize:13,fontWeight:600,color:lc,marginTop:6}}>{label}</div>
+</div>
+))}
+</div>
+{overdueRentals.length>0&&<div style={{background:”#fffbeb”,border:“2px solid #fcd34d”,borderRadius:18,padding:“16px 18px”,marginBottom:16}}><div style={{fontSize:15,fontWeight:700,color:”#92400e”}}>⚠️ {overdueRentals.length} overdue return{overdueRentals.length>1?“s”:””} — follow up immediately</div></div>}
+{damagedTools.length>0&&<div style={{background:”#fef2f2”,border:“2px solid #fca5a5”,borderRadius:18,padding:“16px 18px”,marginBottom:16}}><div style={{fontSize:15,fontWeight:700,color:”#991b1b”}}>🚩 {damagedTools.length} tool{damagedTools.length>1?“s”:””} flagged for damage</div></div>}
+<h2 style={{fontSize:16,fontWeight:700,color:”#18181b”,margin:“0 0 12px”}}>Quick Actions</h2>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:12}}>
+{[
+{label:“Check Out\nTool”,e:“📤”,v:“checkout”,bg:”#f59e0b”,c:”#18181b”},
+{label:“Check In\nTool”,e:“📥”,v:“checkin”,bg:”#18181b”,c:”#fff”},
+{label:“Job Sites”,e:“📍”,v:“jobsites”,bg:”#f0fdf4”,c:”#059669”},
+{label:“View\nRentals”,e:“📋”,v:“rentals”,bg:”#eff6ff”,c:”#2563eb”},
+].map(({label,e,v,bg,c})=>(
+<button key={v} onClick={()=>setView(v)} style={{background:bg,borderRadius:18,padding:“20px 16px”,border:“none”,cursor:“pointer”,display:“flex”,flexDirection:“column”,alignItems:“flex-start”,gap:10,fontFamily:”‘DM Sans’,sans-serif”}}>
+<span style={{fontSize:22}}>{e}</span>
+<span style={{fontSize:15,fontWeight:700,color:c,textAlign:“left”,lineHeight:1.3,whiteSpace:“pre-line”}}>{label}</span>
+</button>
+))}
+</div>
+</div>
+);
+}
+
+// ─── JOB SITES ────────────────────────────────────────────────
+function JobSites({jobSites,updateJobSites}) {
+const [showForm,setShowForm] = useState(false);
+const [editSite,setEditSite] = useState(null);
+const [expanded,setExpanded] = useState(null);
+const [search,setSearch] = useState(””);
+
+const filtered = jobSites.filter(s=>!search||s.name.toLowerCase().includes(search.toLowerCase())||(s.address||””).toLowerCase().includes(search.toLowerCase()));
+
+const deleteSite = (id) => {
+if(!confirm(“Delete this job site?”)) return;
+updateJobSites(jobSites.filter(s=>s.id!==id));
+};
+
+const typeColors = {
+Residential:{bg:”#f0fdf4”,c:”#059669”},
+Commercial:{bg:”#eff6ff”,c:”#2563eb”},
+Industrial:{bg:”#fef3c7”,c:”#b45309”},
+Institutional:{bg:”#faf5ff”,c:”#7c3aed”},
+};
+
+return (
+<div>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:18}}>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:0}}>Job Sites</h1>
+<button onClick={()=>{setEditSite(null);setShowForm(true);}} style={{background:”#f59e0b”,border:“none”,borderRadius:13,padding:“11px 18px”,fontWeight:700,fontSize:14,cursor:“pointer”,fontFamily:”‘DM Sans’,sans-serif”,color:”#18181b”}}>+ Add Site</button>
+</div>
+
+```
+  <div style={{position:"relative",marginBottom:18}}>
+    <span style={{position:"absolute",left:15,top:"50%",transform:"translateY(-50%)",fontSize:16}}>🔍</span>
+    <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search job sites…" className="tv-input" style={{paddingLeft:44}}/>
+  </div>
+
+  {filtered.length===0?(
+    <div style={{textAlign:"center",padding:"60px 0",color:"#a1a1aa"}}>
+      <div style={{fontSize:44,marginBottom:14}}>📍</div>
+      <p style={{fontSize:15,margin:0}}>No job sites yet. Tap Add Site to begin.</p>
+    </div>
+  ):filtered.map(site=>{
+    const tc = typeColors[site.type]||{bg:"#f4f4f5",c:"#3f3f46"};
+    const isExpanded = expanded===site.id;
+    return(
+      <div key={site.id} className="tv-card" style={{borderLeft:"4px solid #f59e0b"}}>
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+          <div style={{flex:1,paddingRight:12}}>
+            <div style={{fontSize:18,fontWeight:700,color:"#18181b"}}>{site.name}</div>
+            <div style={{fontSize:13,color:"#71717a",marginTop:4}}>📍 {site.address||"No address"}</div>
+          </div>
+          <span className="tv-badge" style={{background:tc.bg,color:tc.c,flexShrink:0}}>{site.type||"—"}</span>
+        </div>
+
+        {/* Key Info */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+          {site.siteSuperintendent&&<InfoBlock label="Site Super" value={site.siteSuperintendent}/>}
+          {site.projectManager&&<InfoBlock label="Project Manager" value={site.projectManager}/>}
+        </div>
+
+        {/* Expand toggle */}
+        <button onClick={()=>setExpanded(isExpanded?null:site.id)} style={{background:"#f9f9f9",border:"none",borderRadius:12,padding:"10px 16px",width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,color:"#71717a",cursor:"pointer",marginBottom:12,textAlign:"left"}}>
+          {isExpanded?"▲ Hide details":"▼ Show full details"}
+        </button>
+
+        {/* Expanded Details */}
+        {isExpanded&&(
+          <div style={{marginBottom:14}}>
+            {site.gtEmployees&&site.gtEmployees.length>0&&(
+              <div style={{marginBottom:14}}>
+                <div className="tv-label" style={{marginBottom:8}}>GT Mann Employees on Site</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {site.gtEmployees.map((e,i)=>(
+                    <span key={i} style={{background:"#18181b",color:"#f59e0b",borderRadius:20,padding:"5px 12px",fontSize:13,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>👷 {e}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {site.subTrades&&site.subTrades.length>0&&(
+              <div style={{marginBottom:14}}>
+                <div className="tv-label" style={{marginBottom:8}}>Sub Trade Companies</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {site.subTrades.map((s,i)=>(
+                    <span key={i} style={{background:"#eff6ff",color:"#2563eb",borderRadius:20,padding:"5px 12px",fontSize:13,fontWeight:600,fontFamily:"'DM Mono',monospace"}}>🏗️ {s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {site.notes&&(
+              <div>
+                <div className="tv-label" style={{marginBottom:6}}>Notes</div>
+                <div style={{fontSize:14,color:"#3f3f46",lineHeight:1.6,background:"#f9f9f9",borderRadius:12,padding:"12px 14px"}}>{site.notes}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <button onClick={()=>{setEditSite(site);setShowForm(true);}} className="tv-btn" style={{padding:"12px",fontSize:14,background:"#f4f4f5",color:"#3f3f46"}}>✏️ Edit</button>
+          <button onClick={()=>deleteSite(site.id)} className="tv-btn" style={{padding:"12px",fontSize:14,background:"#fef2f2",color:"#dc2626"}}>🗑️ Delete</button>
+        </div>
+      </div>
+    );
+  })}
+
+  {showForm&&<JobSiteFormModal site={editSite} onClose={()=>setShowForm(false)} onSave={data=>{
+    if(editSite) updateJobSites(jobSites.map(s=>s.id===editSite.id?{...s,...data}:s));
+    else updateJobSites([...jobSites,{id:uid(),...data}]);
+    setShowForm(false);
+  }}/>}
+</div>
+```
+
+);
+}
+
+function JobSiteFormModal({site,onSave,onClose}) {
+const [f,setF] = useState({
+name: site?.name||””,
+address: site?.address||””,
+type: site?.type||“Residential”,
+siteSuperintendent: site?.siteSuperintendent||””,
+projectManager: site?.projectManager||””,
+gtEmployees: site?.gtEmployees||[],
+subTrades: site?.subTrades||[],
+notes: site?.notes||””,
+});
+const [newEmployee,setNewEmployee] = useState(””);
+const [newSubTrade,setNewSubTrade] = useState(””);
+const set=(k,v)=>setF(p=>({…p,[k]:v}));
+
+const addEmployee = () => {
+const v = newEmployee.trim();
+if(!v||f.gtEmployees.includes(v)) return;
+set(“gtEmployees”,[…f.gtEmployees,v]);
+setNewEmployee(””);
+};
+
+const removeEmployee = (name) => set(“gtEmployees”,f.gtEmployees.filter(e=>e!==name));
+
+const addSubTrade = () => {
+const v = newSubTrade.trim();
+if(!v||f.subTrades.includes(v)) return;
+set(“subTrades”,[…f.subTrades,v]);
+setNewSubTrade(””);
+};
+
+const removeSubTrade = (name) => set(“subTrades”,f.subTrades.filter(s=>s!==name));
+
+return(
+<div style={{position:“fixed”,inset:0,background:“rgba(0,0,0,0.6)”,zIndex:300,display:“flex”,flexDirection:“column”,justifyContent:“flex-end”}} onClick={onClose}>
+<div style={{background:”#fff”,borderRadius:“28px 28px 0 0”,padding:“24px 20px 32px”,maxHeight:“95vh”,overflowY:“auto”}} onClick={e=>e.stopPropagation()}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:24}}>
+<span style={{fontSize:20,fontWeight:800,color:”#18181b”}}>{site?“Edit Job Site”:“New Job Site”}</span>
+<button onClick={onClose} style={{background:”#f4f4f5”,border:“none”,borderRadius:10,width:32,height:32,cursor:“pointer”,fontSize:16}}>✕</button>
+</div>
+
+```
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+      {/* Basic Info */}
+      <div style={{background:"#f9f9f9",borderRadius:18,padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:16,textTransform:"uppercase",letterSpacing:"0.06em"}}>📍 Site Information</div>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div><label className="tv-label">Site Name *</label><input value={f.name} onChange={e=>set("name",e.target.value)} placeholder="e.g. 142 Oak Street Development" className="tv-input"/></div>
+          <div><label className="tv-label">Address</label><input value={f.address} onChange={e=>set("address",e.target.value)} placeholder="Full site address" className="tv-input"/></div>
+          <div><label className="tv-label">Type</label>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {SITE_TYPES.map(t=>(
+                <button key={t} onClick={()=>set("type",t)} style={{padding:"12px",borderRadius:12,border:`2px solid ${f.type===t?"#f59e0b":"#e4e4e7"}`,background:f.type===t?"#fffbf0":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",color:f.type===t?"#92400e":"#71717a"}}>
+                  {t==="Residential"?"🏠":t==="Commercial"?"🏢":t==="Industrial"?"🏭":"🏫"} {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Management */}
+      <div style={{background:"#f9f9f9",borderRadius:18,padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:16,textTransform:"uppercase",letterSpacing:"0.06em"}}>👔 Site Management</div>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div><label className="tv-label">Site Superintendent</label><input value={f.siteSuperintendent} onChange={e=>set("siteSuperintendent",e.target.value)} placeholder="Full name" className="tv-input"/></div>
+          <div><label className="tv-label">Project Manager</label><input value={f.projectManager} onChange={e=>set("projectManager",e.target.value)} placeholder="Full name" className="tv-input"/></div>
+        </div>
+      </div>
+
+      {/* GT Mann Employees */}
+      <div style={{background:"#f9f9f9",borderRadius:18,padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:16,textTransform:"uppercase",letterSpacing:"0.06em"}}>👷 GT Mann Employees on Site</div>
+        <div className="tag-input-row">
+          <input value={newEmployee} onChange={e=>setNewEmployee(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addEmployee()} placeholder="Employee name" className="tv-input"/>
+          <button onClick={addEmployee} style={{background:"#f59e0b",border:"none",borderRadius:12,padding:"0 18px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",color:"#18181b",flexShrink:0}}>Add</button>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",marginTop:4}}>
+          {f.gtEmployees.length===0&&<span style={{fontSize:13,color:"#a1a1aa"}}>No employees added yet</span>}
+          {f.gtEmployees.map((e,i)=>(
+            <span key={i} className="tag-pill">
+              👷 {e}
+              <button onClick={()=>removeEmployee(e)}>✕</button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Sub Trades */}
+      <div style={{background:"#f9f9f9",borderRadius:18,padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:16,textTransform:"uppercase",letterSpacing:"0.06em"}}>🏗️ Sub Trade Companies</div>
+        <div className="tag-input-row">
+          <input value={newSubTrade} onChange={e=>setNewSubTrade(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addSubTrade()} placeholder="Company name" className="tv-input"/>
+          <button onClick={addSubTrade} style={{background:"#f59e0b",border:"none",borderRadius:12,padding:"0 18px",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",color:"#18181b",flexShrink:0}}>Add</button>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",marginTop:4}}>
+          {f.subTrades.length===0&&<span style={{fontSize:13,color:"#a1a1aa"}}>No sub trades added yet</span>}
+          {f.subTrades.map((s,i)=>(
+            <span key={i} className="tag-pill" style={{background:"#eff6ff",color:"#1e40af"}}>
+              🏗️ {s}
+              <button onClick={()=>removeSubTrade(s)}>✕</button>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div><label className="tv-label">Notes</label><textarea value={f.notes} onChange={e=>set("notes",e.target.value)} placeholder="Any additional site notes…" className="tv-input"/></div>
+
+      <button onClick={()=>f.name&&onSave(f)} className="tv-btn" style={{background:"#f59e0b",color:"#18181b"}}>{site?"Save Changes":"Add Job Site"}</button>
+      <button onClick={onClose} className="tv-btn" style={{background:"#f4f4f5",color:"#3f3f46"}}>Cancel</button>
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+// ─── MORE MENU ────────────────────────────────────────────────
+function More({setView,activeRentals,jobSites}) {
+return (
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>More</h1>
+<div style={{background:”#fff”,borderRadius:20,overflow:“hidden”,boxShadow:“0 1px 3px rgba(0,0,0,0.07)”}}>
+{[
+{label:“Job Sites”,e:“📍”,view:“jobsites”,sub:`${jobSites.length} active sites`},
+{label:“Active Rentals”,e:“📋”,view:“rentals”,sub:`${activeRentals.length} currently out`},
+{label:“Categories”,e:“🏷️”,view:“categories”,sub:“Manage tool categories”},
+{label:“Settings”,e:“⚙️”,view:“settings”,sub:“Manager & alerts”},
+].map(({label,e,view,sub},i,arr)=>(
+<button key={view} onClick={()=>setView(view)} style={{width:“100%”,background:“none”,border:“none”,display:“flex”,alignItems:“center”,gap:14,padding:“18px”,cursor:“pointer”,fontFamily:”‘DM Sans’,sans-serif”,borderBottom:i<arr.length-1?“1px solid #f4f4f5”:“none”}}>
+<div style={{width:44,height:44,background:”#f4f4f5”,borderRadius:13,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:20,flexShrink:0}}>{e}</div>
+<div style={{flex:1,textAlign:“left”}}>
+<div style={{fontSize:16,fontWeight:600,color:”#18181b”}}>{label}</div>
+<div style={{fontSize:13,color:”#a1a1aa”,marginTop:3}}>{sub}</div>
+</div>
+<span style={{color:”#d4d4d8”,fontSize:18}}>›</span>
+</button>
+))}
+</div>
+</div>
+);
+}
+
+// ─── INVENTORY ────────────────────────────────────────────────
+function Inventory({tools,categories,rentals,onRefresh}) {
+const [showForm,setShowForm]=useState(false);
+const [editTool,setEditTool]=useState(null);
+const [search,setSearch]=useState(””);
+const activeRentals=rentals.filter(r=>r.status===“active”);
+const getStatus=t=>{if(activeRentals.find(r=>r.toolId===t.id))return”out”;if(t.damageFlagged||t.condition===“Needs Repair”)return”damaged”;return”available”;};
+const filtered=tools.filter(t=>!search||t.name.toLowerCase().includes(search.toLowerCase())||(t.serialNumber||””).toLowerCase().includes(search.toLowerCase()));
+return(
+<div>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:18}}>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:0}}>Inventory</h1>
+<button onClick={()=>{setEditTool(null);setShowForm(true);}} style={{background:”#f59e0b”,border:“none”,borderRadius:13,padding:“11px 18px”,fontWeight:700,fontSize:14,cursor:“pointer”,fontFamily:”‘DM Sans’,sans-serif”,color:”#18181b”}}>+ Add Tool</button>
+</div>
+<div style={{position:“relative”,marginBottom:18}}>
+<span style={{position:“absolute”,left:15,top:“50%”,transform:“translateY(-50%)”,fontSize:16}}>🔍</span>
+<input value={search} onChange={e=>setSearch(e.target.value)} placeholder=“Search tools…” className=“tv-input” style={{paddingLeft:44}}/>
+</div>
+{filtered.length===0?<div style={{textAlign:“center”,padding:“60px 0”,color:”#a1a1aa”}}><div style={{fontSize:44,marginBottom:14}}>📦</div><p style={{fontSize:15,margin:0}}>No tools yet.</p></div>
+:filtered.map(tool=>{
+const st=getStatus(tool);
+const sc={available:{bg:”#d1fae5”,c:”#065f46”,l:“Available”},out:{bg:”#dbeafe”,c:”#1e40af”,l:“Checked Out”},damaged:{bg:”#fee2e2”,c:”#991b1b”,l:“Damaged”}}[st];
+return(
+<div key={tool.id} className=“tv-card” style={{borderLeft:`4px solid ${st==="available"?"#10b981":st==="out"?"#3b82f6":"#ef4444"}`}}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“flex-start”,marginBottom:14}}>
+<div style={{flex:1,paddingRight:12}}>
+<div style={{fontSize:18,fontWeight:700,color:”#18181b”}}>{tool.name}</div>
+<div style={{fontSize:13,color:”#71717a”,marginTop:5}}>{tool.category}</div>
+</div>
+<span className="tv-badge" style={{background:sc.bg,color:sc.c}}>{sc.l}</span>
+</div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:12,marginBottom:16}}>
+{tool.serialNumber&&<InfoBlock label="Serial #" value={tool.serialNumber}/>}
+{tool.assetTag&&<InfoBlock label="Asset Tag" value={tool.assetTag}/>}
+<InfoBlock label="Condition" value={tool.condition} color={COND_COLOR[tool.condition]}/>
+{tool.purchaseValue&&<InfoBlock label=“Value” value={`$${Number(tool.purchaseValue).toLocaleString()}`}/>}
+{tool.jobSite&&<InfoBlock label="Job Site" value={tool.jobSite}/>}
+</div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:10}}>
+<button onClick={()=>{setEditTool(tool);setShowForm(true);}} className=“tv-btn” style={{padding:“13px”,fontSize:14,background:”#f4f4f5”,color:”#3f3f46”}}>✏️ Edit</button>
+<button onClick={async()=>{if(!confirm(“Delete this tool?”))return;await api.deleteTool(tool.id);onRefresh();}} className=“tv-btn” style={{padding:“13px”,fontSize:14,background:”#fef2f2”,color:”#dc2626”}}>🗑️ Delete</button>
+</div>
+</div>
+);
+})}
+{showForm&&<ToolFormModal tool={editTool} categories={categories} onClose={()=>setShowForm(false)} onSave={async d=>{if(editTool)await api.updateTool(editTool.id,d);else await api.addTool(d);await onRefresh();setShowForm(false);}}/>}
+</div>
+);
+}
+
+function ToolFormModal({tool,categories,onSave,onClose}) {
+const [f,setF]=useState({name:tool?.name||””,category:tool?.category||categories[0]||””,serialNumber:tool?.serialNumber||””,assetTag:tool?.assetTag||””,condition:tool?.condition||“Good”,purchaseValue:tool?.purchaseValue||””,jobSite:tool?.jobSite||””,notes:tool?.notes||””,photoAttached:tool?.photoAttached||false});
+const set=(k,v)=>setF(p=>({…p,[k]:v}));
+return(
+<div style={{position:“fixed”,inset:0,background:“rgba(0,0,0,0.6)”,zIndex:300,display:“flex”,flexDirection:“column”,justifyContent:“flex-end”}} onClick={onClose}>
+<div style={{background:”#fff”,borderRadius:“28px 28px 0 0”,padding:“24px 20px 32px”,maxHeight:“92vh”,overflowY:“auto”}} onClick={e=>e.stopPropagation()}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:24}}>
+<span style={{fontSize:20,fontWeight:800,color:”#18181b”}}>{tool?“Edit Tool”:“New Tool”}</span>
+<button onClick={onClose} style={{background:”#f4f4f5”,border:“none”,borderRadius:10,width:32,height:32,cursor:“pointer”,fontSize:16}}>✕</button>
+</div>
+<div style={{display:“flex”,flexDirection:“column”,gap:18}}>
+<div><label className="tv-label">Tool Name *</label><input value={f.name} onChange={e=>set(“name”,e.target.value)} placeholder=“e.g. DeWalt 20V Circular Saw” className=“tv-input”/></div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:14}}>
+<div><label className="tv-label">Category</label><select value={f.category} onChange={e=>set(“category”,e.target.value)} className=“tv-input”>{categories.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label className="tv-label">Condition</label><select value={f.condition} onChange={e=>set(“condition”,e.target.value)} className=“tv-input”>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label className="tv-label">Serial #</label><input value={f.serialNumber} onChange={e=>set(“serialNumber”,e.target.value)} placeholder=“SN-XXXXX” className=“tv-input”/></div>
+<div><label className="tv-label">Asset Tag</label><input value={f.assetTag} onChange={e=>set(“assetTag”,e.target.value)} placeholder=“AT-XXXXX” className=“tv-input”/></div>
+<div><label className="tv-label">Value ($)</label><input type=“number” value={f.purchaseValue} onChange={e=>set(“purchaseValue”,e.target.value)} placeholder=“0” className=“tv-input”/></div>
+<div><label className="tv-label">Job Site</label><input value={f.jobSite} onChange={e=>set(“jobSite”,e.target.value)} placeholder=“Site name” className=“tv-input”/></div>
+</div>
+<div><label className="tv-label">Notes</label><textarea value={f.notes} onChange={e=>set(“notes”,e.target.value)} placeholder=“Any notes…” className=“tv-input”/></div>
+<button onClick={()=>f.name&&onSave(f)} className=“tv-btn” style={{background:”#f59e0b”,color:”#18181b”}}>{tool?“Save Changes”:“Add Tool”}</button>
+<button onClick={onClose} className=“tv-btn” style={{background:”#f4f4f5”,color:”#3f3f46”}}>Cancel</button>
+</div>
+</div>
+</div>
+);
+}
+
+// ─── CHECK OUT ────────────────────────────────────────────────
+function CheckOut({tools,rentals,activeRentals,jobSites,onRefresh}) {
+const available=tools.filter(t=>!activeRentals.find(r=>r.toolId===t.id)&&t.condition!==“Needs Repair”);
+const [f,setF]=useState({toolId:””,rentalType:“internal”,checkedOutBy:””,company:””,employeeId:””,jobSite:””,checkoutDate:today(),expectedReturn:””,checkoutCondition:“Good”,notes:””,signature:””});
+const [done,setDone]=useState(false);
+const [saving,setSaving]=useState(false);
+const set=(k,v)=>setF(p=>({…p,[k]:v}));
+const submit=async()=>{
+if(!f.toolId||!f.checkedOutBy||!f.expectedReturn||!f.jobSite){alert(“Required: Tool, Name, Job Site, Return Date.”);return;}
+setSaving(true);
+try{await api.addRental(f);await onRefresh();setDone(true);setF(p=>({…p,toolId:””,checkedOutBy:””,company:””,employeeId:””,jobSite:””,expectedReturn:””,notes:””,signature:””}));setTimeout(()=>setDone(false),4000);}
+finally{setSaving(false);}
+};
+return(
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Check Out</h1>
+{done&&<SuccessBanner msg="Tool successfully checked out!"/>}
+<div style={{display:“flex”,flexDirection:“column”,gap:18}}>
+<div><label className="tv-label">Select Tool *</label><select value={f.toolId} onChange={e=>set(“toolId”,e.target.value)} className=“tv-input”><option value="">— Choose an available tool —</option>{available.map(t=><option key={t.id} value={t.id}>{t.name}{t.assetTag?` · ${t.assetTag}`:””}</option>)}</select></div>
+<div><label className="tv-label">Rental Type *</label><div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:10}}>{[“internal”,“external”].map(type=><button key={type} onClick={()=>set(“rentalType”,type)} style={{padding:“15px”,borderRadius:14,border:`2px solid ${f.rentalType===type?"#f59e0b":"#e4e4e7"}`,background:f.rentalType===type?”#fffbf0”:”#fff”,fontWeight:700,fontSize:14,cursor:“pointer”,fontFamily:”‘DM Sans’,sans-serif”,color:f.rentalType===type?”#92400e”:”#71717a”}}>{type===“internal”?“👷 Internal”:“🏗️ External”}</button>)}</div></div>
+<div><label className="tv-label">Full Name *</label><input value={f.checkedOutBy} onChange={e=>set(“checkedOutBy”,e.target.value)} placeholder=“Recipient’s full name” className=“tv-input”/></div>
+{f.rentalType===“internal”?<div><label className="tv-label">Employee ID</label><input value={f.employeeId} onChange={e=>set(“employeeId”,e.target.value)} placeholder=“EMP-XXXX” className=“tv-input”/></div>:<div><label className="tv-label">Company</label><input value={f.company} onChange={e=>set(“company”,e.target.value)} placeholder=“Company name” className=“tv-input”/></div>}
+<div>
+<label className="tv-label">Job Site *</label>
+{jobSites.length>0?(
+<select value={f.jobSite} onChange={e=>set(“jobSite”,e.target.value)} className=“tv-input”>
+<option value="">— Select a job site —</option>
+{jobSites.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
+<option value="__other__">Other (type below)</option>
+</select>
+):(
+<input value={f.jobSite} onChange={e=>set(“jobSite”,e.target.value)} placeholder=“Site name or address” className=“tv-input”/>
+)}
+{f.jobSite===”**other**”&&<input value=”” onChange={e=>set(“jobSite”,e.target.value)} placeholder=“Type site name” className=“tv-input” style={{marginTop:10}}/>}
+</div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:14}}>
+<div><label className="tv-label">Checkout Date</label><input type=“date” value={f.checkoutDate} onChange={e=>set(“checkoutDate”,e.target.value)} className=“tv-input”/></div>
+<div><label className="tv-label">Return Date *</label><input type=“date” value={f.expectedReturn} onChange={e=>set(“expectedReturn”,e.target.value)} className=“tv-input”/></div>
+</div>
+<div><label className="tv-label">Condition</label><select value={f.checkoutCondition} onChange={e=>set(“checkoutCondition”,e.target.value)} className=“tv-input”>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label className="tv-label">Notes</label><textarea value={f.notes} onChange={e=>set(“notes”,e.target.value)} placeholder=“Accessories, condition notes…” className=“tv-input”/></div>
+<div><label className="tv-label">Digital Signature</label><input value={f.signature} onChange={e=>set(“signature”,e.target.value)} placeholder=“Recipient types full name to sign” className=“tv-input” style={{fontStyle:“italic”}}/></div>
+<button onClick={submit} className=“tv-btn” style={{background:”#f59e0b”,color:”#18181b”}} disabled={saving}>{saving?“Saving…”:“✓ Confirm Check Out”}</button>
+</div>
+</div>
+);
+}
+
+// ─── CHECK IN ─────────────────────────────────────────────────
+function CheckIn({tools,rentals,onRefresh}) {
+const activeRentals=rentals.filter(r=>r.status===“active”);
+const [f,setF]=useState({rentalId:””,returnCondition:“Good”,notes:””,damageFlagged:false,damageDesc:””,signature:””});
+const [done,setDone]=useState(false);
+const [saving,setSaving]=useState(false);
+const set=(k,v)=>setF(p=>({…p,[k]:v}));
+const selRental=activeRentals.find(r=>r.id===f.rentalId);
+const selTool=tools.find(t=>t.id===selRental?.toolId);
+const submit=async()=>{
+if(!f.rentalId){alert(“Please select a rental.”);return;}
+if(f.damageFlagged&&!f.damageDesc){alert(“Please describe the damage.”);return;}
+setSaving(true);
+try{await api.updateRental(f.rentalId,{status:“returned”,returnDate:new Date().toISOString(),returnCondition:f.returnCondition,damageFlagged:f.damageFlagged,damageDesc:f.damageDesc,returnNotes:f.notes,returnSignature:f.signature});await onRefresh();setDone(true);setF({rentalId:””,returnCondition:“Good”,notes:””,damageFlagged:false,damageDesc:””,signature:””});setTimeout(()=>setDone(false),4000);}
+finally{setSaving(false);}
+};
+return(
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Check In</h1>
+{done&&<SuccessBanner msg="Tool successfully checked in!"/>}
+<div style={{display:“flex”,flexDirection:“column”,gap:18}}>
+<div><label className="tv-label">Select Rental *</label><select value={f.rentalId} onChange={e=>set(“rentalId”,e.target.value)} className=“tv-input”><option value="">— Select tool being returned —</option>{activeRentals.map(r=>{const t=tools.find(x=>x.id===r.toolId);const ov=isOverdue(r.expectedReturn);return<option key={r.id} value={r.id}>{t?.name||“Unknown”} — {r.checkedOutBy}{ov?” ⚠️ OVERDUE”:””}</option>;})}</select></div>
+{selRental&&<div style={{background:”#eff6ff”,borderRadius:16,padding:“16px 18px”,border:“1.5px solid #bfdbfe”}}><div style={{fontSize:17,fontWeight:700,color:”#1e40af”,marginBottom:8}}>{selTool?.name}</div><div style={{fontSize:14,color:”#3b82f6”,lineHeight:1.7}}>By: <strong>{selRental.checkedOutBy}</strong>{selRental.company?` · ${selRental.company}`:””}<br/>📍 {selRental.jobSite} | Due: {fmt(selRental.expectedReturn)}{isOverdue(selRental.expectedReturn)&&<><br/><strong style={{color:”#d97706”}}>⚠️ Overdue</strong></>}</div></div>}
+<div><label className="tv-label">Return Condition</label><select value={f.returnCondition} onChange={e=>set(“returnCondition”,e.target.value)} className=“tv-input”>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></div>
+<label style={{display:“flex”,alignItems:“center”,gap:14,cursor:“pointer”}}>
+<input type=“checkbox” checked={f.damageFlagged} onChange={e=>set(“damageFlagged”,e.target.checked)} style={{width:22,height:22,accentColor:”#ef4444”}}/>
+<span style={{fontSize:16,fontWeight:700,color:”#dc2626”}}>🚩 Flag as Damaged</span>
+</label>
+{f.damageFlagged&&<div><label className="tv-label">Damage Description *</label><textarea value={f.damageDesc} onChange={e=>set(“damageDesc”,e.target.value)} placeholder=“Describe the damage…” className=“tv-input” style={{borderColor:”#fca5a5”}}/></div>}
+<div><label className="tv-label">Return Notes</label><textarea value={f.notes} onChange={e=>set(“notes”,e.target.value)} placeholder=“Condition notes, missing parts…” className=“tv-input”/></div>
+<div><label className="tv-label">Return Signature</label><input value={f.signature} onChange={e=>set(“signature”,e.target.value)} placeholder=“Person returning types full name” className=“tv-input” style={{fontStyle:“italic”}}/></div>
+<button onClick={submit} className=“tv-btn” style={{background:”#18181b”,color:”#fff”}} disabled={saving}>{saving?“Saving…”:“✓ Confirm Check In”}</button>
+</div>
+</div>
+);
+}
+
+// ─── ACTIVE RENTALS ───────────────────────────────────────────
+function ActiveRentals({tools,rentals,overdueRentals}) {
+return(
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Active Rentals</h1>
+{overdueRentals.length>0&&<div style={{background:”#fffbeb”,border:“2px solid #fcd34d”,borderRadius:18,padding:“16px 18px”,marginBottom:20}}><div style={{fontSize:15,fontWeight:700,color:”#92400e”}}>⚠️ {overdueRentals.length} overdue — follow up immediately</div></div>}
+{rentals.length===0?<div style={{textAlign:“center”,padding:“60px 0”,color:”#a1a1aa”}}><div style={{fontSize:44,marginBottom:14}}>📋</div><p style={{fontSize:15,margin:0}}>No active rentals</p></div>
+:rentals.map(r=>{
+const tool=tools.find(t=>t.id===r.toolId)||{};
+const ov=isOverdue(r.expectedReturn);
+return(
+<div key={r.id} className=“tv-card” style={{borderLeft:`4px solid ${ov?"#f59e0b":r.rentalType==="external"?"#8b5cf6":"#3b82f6"}`}}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“flex-start”,marginBottom:14}}>
+<div style={{flex:1,paddingRight:12}}>
+<div style={{fontSize:18,fontWeight:700,color:”#18181b”}}>{tool.name||“Unknown Tool”}</div>
+<div style={{fontSize:13,color:”#71717a”,marginTop:4}}>{r.checkedOutBy}{r.company?` · ${r.company}`:””}</div>
+</div>
+<div style={{display:“flex”,flexDirection:“column”,gap:6,alignItems:“flex-end”}}>
+<span className=“tv-badge” style={{background:r.rentalType===“external”?”#ede9fe”:”#dbeafe”,color:r.rentalType===“external”?”#5b21b6”:”#1e40af”}}>{r.rentalType}</span>
+{ov&&<span className=“tv-badge” style={{background:”#fef3c7”,color:”#92400e”}}>OVERDUE</span>}
+</div>
+</div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:12}}>
+<InfoBlock label=“Job Site” value={r.jobSite||”—”}/>
+<InfoBlock label=“Due Date” value={fmt(r.expectedReturn)} color={ov?”#d97706”:undefined}/>
+<InfoBlock label="Checked Out" value={fmt(r.checkoutDate)}/>
+<InfoBlock label="Condition" value={r.checkoutCondition} color={COND_COLOR[r.checkoutCondition]}/>
+</div>
+</div>
+);
+})}
+</div>
+);
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────────
+function Categories({categories,onRefresh}) {
+const [newCat,setNewCat]=useState(””);
+const add=async()=>{const v=newCat.trim();if(!v||categories.includes(v))return;await api.updateCategories([…categories,v]);setNewCat(””);onRefresh();};
+const del=async c=>{if(!confirm(`Delete "${c}"?`))return;await api.updateCategories(categories.filter(x=>x!==c));onRefresh();};
+return(
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Categories</h1>
+<div style={{display:“flex”,gap:10,marginBottom:20}}>
+<input value={newCat} onChange={e=>setNewCat(e.target.value)} onKeyDown={e=>e.key===“Enter”&&add()} placeholder=“New category name…” className=“tv-input” style={{flex:1}}/>
+<button onClick={add} style={{background:”#f59e0b”,border:“none”,borderRadius:13,padding:“0 20px”,fontWeight:700,fontSize:15,cursor:“pointer”,fontFamily:”‘DM Sans’,sans-serif”,color:”#18181b”,whiteSpace:“nowrap”}}>Add</button>
+</div>
+<div style={{background:”#fff”,borderRadius:20,overflow:“hidden”,boxShadow:“0 1px 3px rgba(0,0,0,0.07)”}}>
+{categories.map((cat,i)=>(
+<div key={cat} style={{padding:“16px 18px”,borderBottom:i<categories.length-1?“1px solid #f4f4f5”:“none”,display:“flex”,alignItems:“center”,gap:12}}>
+<div style={{width:8,height:8,background:”#f59e0b”,borderRadius:“50%”}}/>
+<span style={{flex:1,fontSize:16,fontWeight:600,color:”#18181b”}}>{cat}</span>
+<button onClick={()=>del(cat)} style={{background:“none”,border:“none”,padding:“8px”,cursor:“pointer”,fontSize:16}}>🗑️</button>
+</div>
+))}
+</div>
+</div>
+);
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────
+function SettingsPage({managerName,onRefresh}) {
+const [name,setName]=useState(managerName);
+const [saved,setSaved]=useState(false);
+return(
+<div>
+<h1 style={{fontSize:26,fontWeight:800,color:”#18181b”,margin:“0 0 20px”}}>Settings</h1>
+<div style={{display:“flex”,flexDirection:“column”,gap:20}}>
+<div><label className="tv-label">Manager / Dispatcher Name</label><input value={name} onChange={e=>setName(e.target.value)} className=“tv-input”/></div>
+<div style={{background:”#eff6ff”,borderRadius:18,padding:18,border:“1.5px solid #bfdbfe”}}>
+<div style={{fontSize:15,fontWeight:700,color:”#1e40af”,marginBottom:10}}>🔔 Alert System</div>
+<div style={{fontSize:14,color:”#3b82f6”,lineHeight:1.8}}>🟡 Overdue alerts post to #tools-alerts hourly<br/>🔴 Damage alerts post instantly on check-in</div>
+</div>
+{saved&&<SuccessBanner msg="Settings saved!"/>}
+<button onClick={async()=>{await api.updateManager(name);await onRefresh();setSaved(true);setTimeout(()=>setSaved(false),2500);}} className=“tv-btn” style={{background:”#f59e0b”,color:”#18181b”}}>Save Settings</button>
+</div>
+</div>
+);
+}
+
+// ─── SHARED ───────────────────────────────────────────────────
+function InfoBlock({label,value,color}) {
+return(
+<div>
+<div style={{fontSize:11,fontWeight:700,color:”#a1a1aa”,textTransform:“uppercase”,letterSpacing:“0.06em”,marginBottom:3}}>{label}</div>
+<div style={{fontSize:14,fontWeight:600,color:color||”#3f3f46”,fontFamily:”‘DM Mono’,monospace”,wordBreak:“break-word”}}>{value}</div>
+</div>
+);
+}
+
+function SuccessBanner({msg}) {
+return(
+<div style={{background:”#f0fdf4”,border:“2px solid #86efac”,borderRadius:16,padding:“14px 16px”,marginBottom:16,display:“flex”,alignItems:“center”,gap:10}}>
+<span style={{fontSize:18}}>✅</span>
+<span style={{fontSize:15,fontWeight:600,color:”#166534”}}>{msg}</span>
+</div>
+);
+}
+
+ReactDOM.render(<App/>, document.getElementById(“root”));
+</script>
+
+</body>
+</html>
