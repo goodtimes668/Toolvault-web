@@ -591,7 +591,7 @@ return(
 );
 }
 
-// ─── CHECK OUT ────────────────────────────────────────────────
+// ─── CHECK OUT ──────────────────────────────────────────────── 
 function CheckOut({tools,rentals,activeRentals,jobSites,onRefresh}) {
 const available=tools.filter(t=>!activeRentals.find(r=>r.toolId===t.id)&&t.condition!==“Needs Repair”);
 const [f,setF]=useState({toolId:””,rentalType:“internal”,checkedOutBy:””,company:””,employeeId:””,jobSite:””,checkoutDate:today(),expectedReturn:””,checkoutCondition:“Good”,notes:””,signature:””});
