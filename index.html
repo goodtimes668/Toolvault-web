@@ -58,6 +58,21 @@ h2{font-size:16px;font-weight:700;color:#fff;margin:0 0 12px}
 </head>
 <body>
 
+<!-- GT Mann Logo Watermark -->
+
+<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden">
+  <svg viewBox="0 0 600 120" style="width:min(90vw,500px);opacity:0.045;fill:white" xmlns="http://www.w3.org/2000/svg">
+    <!-- GT stylized letters matching logo -->
+    <text x="0" y="100" 
+      font-family="DM Sans, sans-serif" 
+      font-size="120" 
+      font-weight="800" 
+      font-style="italic"
+      letter-spacing="-4"
+      fill="white">GTMANN</text>
+  </svg>
+</div>
+
 <!-- Loading Screen -->
 
 <div id="loading" class="loading">
@@ -82,7 +97,7 @@ h2{font-size:16px;font-weight:700;color:#fff;margin:0 0 12px}
 
   <!-- Top Bar -->
 
-  <div class="topbar">
+  <div class="topbar" style="position:sticky;top:0;z-index:50">
     <div class="topbar-inner">
       <div style="display:flex;align-items:center;gap:11px">
         <div class="logo-box">🔧</div>
@@ -114,7 +129,7 @@ h2{font-size:16px;font-weight:700;color:#fff;margin:0 0 12px}
 
   <!-- Pages -->
 
-  <div id="pg-dashboard" class="page active">
+  <div id="pg-dashboard" class="page active" style="position:relative;z-index:1">
     <h1>Dashboard</h1>
     <div class="grid2" style="margin-bottom:24px">
       <div style="background:#18181b;border-radius:20px;padding:22px;grid-column:span 2">
