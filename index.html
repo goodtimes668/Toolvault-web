@@ -8,20 +8,20 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0;padding:0;font-family:'DM Sans',sans-serif;background:#f4f4f5;min-height:100vh}
+body{margin:0;padding:0;font-family:'DM Sans',sans-serif;background:#0a0a0a;min-height:100vh}
 .page{padding:22px 16px 110px;max-width:640px;margin:0 auto;display:none}
 .page.active{display:block}
-.tv-input{width:100%;padding:15px 16px;background:#f9f9f9;border:2px solid #e4e4e7;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;color:#18181b;-webkit-appearance:none;display:block;margin:0}
-.tv-input:focus{border-color:#f59e0b;background:#fffbf0}
-.tv-label{font-size:12px;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px}
+.tv-input{width:100%;padding:15px 16px;background:#1a1a1a;border:2px solid #e4e4e7;border-radius:14px;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;color:#fff;-webkit-appearance:none;display:block;margin:0}
+.tv-input:focus{border-color:#fff;background:#2a2a2a}
+.tv-label{font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px}
 .tv-badge{display:inline-flex;align-items:center;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;font-family:'DM Mono',monospace;white-space:nowrap}
-.tv-card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+.tv-card{background:#1a1a1a;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
 .tv-btn{display:block;width:100%;padding:17px;border:none;border-radius:15px;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center}
 .tv-btn-amber{background:#f59e0b;color:#18181b}
 .tv-btn-dark{background:#18181b;color:#fff}
-.tv-btn-ghost{background:#f4f4f5;color:#3f3f46}
+.tv-btn-ghost{background:#0a0a0a;color:#3f3f46}
 .tv-btn-red{background:#fef2f2;color:#dc2626}
-.tag-pill{display:inline-flex;align-items:center;gap:6px;background:#f4f4f5;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;color:#3f3f46;margin:4px 4px 4px 0}
+.tag-pill{display:inline-flex;align-items:center;gap:6px;background:#0a0a0a;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;color:#3f3f46;margin:4px 4px 4px 0}
 .tag-pill button{background:none;border:none;cursor:pointer;color:#a1a1aa;font-size:14px;padding:0;line-height:1}
 select.tv-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
 textarea.tv-input{resize:vertical;min-height:80px}
@@ -29,27 +29,27 @@ textarea.tv-input{resize:vertical;min-height:80px}
 .grid2-full{grid-column:span 2}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:none;flex-direction:column;justify-content:flex-end}
 .modal-bg.open{display:flex}
-.modal-box{background:#fff;border-radius:28px 28px 0 0;padding:24px 20px 32px;max-height:95vh;overflow-y:auto}
-.modal-handle{width:36px;height:4px;background:#e4e4e7;border-radius:2px;margin:0 auto 20px}
+.modal-box{background:#111;border-radius:28px 28px 0 0;padding:24px 20px 32px;max-height:95vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:#333;border-radius:2px;margin:0 auto 20px}
 .success-bar{background:#f0fdf4;border:2px solid #86efac;border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#166534}
 .info-block-label{font-size:11px;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
-.info-block-val{font-size:14px;font-weight:600;color:#3f3f46;font-family:'DM Mono',monospace;word-break:break-word}
+.info-block-val{font-size:14px;font-weight:600;color:#ccc;font-family:'DM Mono',monospace;word-break:break-word}
 .topbar{background:#18181b;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(0,0,0,0.3)}
 .topbar-inner{padding:13px 18px;display:flex;align-items:center;justify-content:space-between;max-width:640px;margin:0 auto}
 .logo-box{width:36px;height:36px;background:#f59e0b;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e4e4e7;display:flex;box-shadow:0 -4px 20px rgba(0,0,0,0.06);z-index:50;padding-bottom:env(safe-area-inset-bottom,0px)}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0 10px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:#a1a1aa;position:relative;font-size:11px;font-weight:500}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #2a2a2a;display:flex;box-shadow:0 -4px 20px rgba(0,0,0,0.4);z-index:50;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0 10px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:#666;position:relative;font-size:11px;font-weight:500}
 .nav-btn.active{color:#f59e0b;font-weight:700}
 .nav-btn.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:3px;background:#f59e0b;border-radius:0 0 3px 3px}
 .nav-icon{font-size:22px}
 .alert-sheet{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;display:none;flex-direction:column;justify-content:flex-end}
 .alert-sheet.open{display:flex}
-.alert-box{background:#fff;border-radius:28px 28px 0 0;padding:24px 20px;max-height:75vh;overflow-y:auto}
-h1{font-size:26px;font-weight:800;color:#18181b;margin:0 0 20px}
-h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
+.alert-box{background:#111;border-radius:28px 28px 0 0;padding:24px 20px;max-height:75vh;overflow-y:auto}
+h1{font-size:26px;font-weight:800;color:#fff;margin:0 0 20px}
+h2{font-size:16px;font-weight:700;color:#fff;margin:0 0 12px}
 .overdue-banner{background:#fffbeb;border:2px solid #fcd34d;border-radius:18px;padding:16px 18px;margin-bottom:16px}
 .damage-banner{background:#fef2f2;border:2px solid #fca5a5;border-radius:18px;padding:16px 18px;margin-bottom:16px}
-.section-card{background:#f9f9f9;border-radius:18px;padding:18px;margin-bottom:0}
+.section-card{background:#1a1a1a;border-radius:18px;padding:18px;margin-bottom:0}
 .section-title-sm{font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.06em}
 .loading{background:#0f0f0f;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px}
 .error-screen{background:#0f0f0f;display:flex;align-items:center;justify-content:center;height:100vh;padding:24px}
@@ -103,7 +103,7 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
   <!-- Alert Sheet -->
 
   <div id="alertSheet" class="alert-sheet" onclick="closeAlerts()">
-    <div class="alert-box" onclick="event.stopPropagation()">
+    <div class="alert-box" style="background:#111" onclick="event.stopPropagation()">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <span style="font-size:18px;font-weight:800;color:#18181b">Notifications</span>
         <button id="markReadBtn" onclick="markAlertsRead()" style="background:none;border:none;color:#f59e0b;font-weight:700;font-size:14px;cursor:pointer;display:none">Mark read</button>
@@ -120,7 +120,7 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
       <div style="background:#18181b;border-radius:20px;padding:22px;grid-column:span 2">
         <div style="color:#71717a;font-size:11px;font-weight:700;letter-spacing:0.08em;margin-bottom:8px">TOTAL TOOLS</div>
         <div id="stat-total" style="color:#fff;font-size:52px;font-weight:800;line-height:1">0</div>
-        <div id="stat-sub" style="color:#52525b;font-size:13px;margin-top:6px">0 available · 0 out</div>
+        <div id="stat-sub" style="color:#666;font-size:13px;margin-top:6px">0 available · 0 out</div>
       </div>
       <div id="stat-available" style="background:#f0fdf4;border-radius:20px;padding:18px">
         <div style="font-size:20px;margin-bottom:10px">✅</div>
@@ -153,8 +153,8 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
     <div class="grid2">
       <button onclick="nav('checkout')" style="background:#f59e0b;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📤</span><span style="font-size:15px;font-weight:700;color:#18181b;text-align:left;line-height:1.3">Check Out Tool</span></button>
       <button onclick="nav('checkin')" style="background:#18181b;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📥</span><span style="font-size:15px;font-weight:700;color:#fff;text-align:left;line-height:1.3">Check In Tool</span></button>
-      <button onclick="nav('jobsites')" style="background:#f0fdf4;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📍</span><span style="font-size:15px;font-weight:700;color:#059669;text-align:left;line-height:1.3">Job Sites</span></button>
-      <button onclick="nav('rentals')" style="background:#eff6ff;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📋</span><span style="font-size:15px;font-weight:700;color:#2563eb;text-align:left;line-height:1.3">View Rentals</span></button>
+      <button onclick="nav('jobsites')" style="background:#0d2318;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📍</span><span style="font-size:15px;font-weight:700;color:#059669;text-align:left;line-height:1.3">Job Sites</span></button>
+      <button onclick="nav('rentals')" style="background:#1a2a3a;border-radius:18px;padding:20px 16px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-family:'DM Sans',sans-serif"><span style="font-size:22px">📋</span><span style="font-size:15px;font-weight:700;color:#2563eb;text-align:left;line-height:1.3">View Rentals</span></button>
     </div>
   </div>
 
@@ -217,25 +217,25 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
 
   <div id="pg-more" class="page">
     <h1>More</h1>
-    <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.07)">
-      <button onclick="nav('jobsites')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #f4f4f5">
-        <div style="width:44px;height:44px;background:#f4f4f5;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📍</div>
-        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#18181b">Job Sites</div><div id="moreJobSitesSub" style="font-size:13px;color:#a1a1aa;margin-top:3px">0 active sites</div></div>
+    <div style="background:#1a1a1a;border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.4)">
+      <button onclick="nav('jobsites')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #2a2a2a">
+        <div style="width:44px;height:44px;background:#0a0a0a;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📍</div>
+        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#fff">Job Sites</div><div id="moreJobSitesSub" style="font-size:13px;color:#a1a1aa;margin-top:3px">0 active sites</div></div>
         <span style="color:#d4d4d8;font-size:18px">›</span>
       </button>
-      <button onclick="nav('rentals')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #f4f4f5">
-        <div style="width:44px;height:44px;background:#f4f4f5;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📋</div>
-        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#18181b">Active Rentals</div><div id="moreRentalsSub" style="font-size:13px;color:#a1a1aa;margin-top:3px">0 currently out</div></div>
+      <button onclick="nav('rentals')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #2a2a2a">
+        <div style="width:44px;height:44px;background:#0a0a0a;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📋</div>
+        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#fff">Active Rentals</div><div id="moreRentalsSub" style="font-size:13px;color:#a1a1aa;margin-top:3px">0 currently out</div></div>
         <span style="color:#d4d4d8;font-size:18px">›</span>
       </button>
-      <button onclick="nav('categories')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #f4f4f5">
-        <div style="width:44px;height:44px;background:#f4f4f5;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏷️</div>
-        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#18181b">Categories</div><div style="font-size:13px;color:#a1a1aa;margin-top:3px">Manage tool categories</div></div>
+      <button onclick="nav('categories')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:1px solid #2a2a2a">
+        <div style="width:44px;height:44px;background:#0a0a0a;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏷️</div>
+        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#fff">Categories</div><div style="font-size:13px;color:#a1a1aa;margin-top:3px">Manage tool categories</div></div>
         <span style="color:#d4d4d8;font-size:18px">›</span>
       </button>
       <button onclick="nav('settings')" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:14px;padding:18px;cursor:pointer;font-family:'DM Sans',sans-serif">
-        <div style="width:44px;height:44px;background:#f4f4f5;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚙️</div>
-        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#18181b">Settings</div><div style="font-size:13px;color:#a1a1aa;margin-top:3px">Manager & alerts</div></div>
+        <div style="width:44px;height:44px;background:#0a0a0a;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚙️</div>
+        <div style="flex:1;text-align:left"><div style="font-size:16px;font-weight:600;color:#fff">Settings</div><div style="font-size:13px;color:#a1a1aa;margin-top:3px">Manager & alerts</div></div>
         <span style="color:#d4d4d8;font-size:18px">›</span>
       </button>
     </div>
@@ -265,14 +265,14 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
       <input class="tv-input" id="newCat" placeholder="New category name…" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()"/>
       <button class="tv-btn tv-btn-amber" onclick="addCategory()" style="width:auto;padding:0 20px;font-size:15px;white-space:nowrap">Add</button>
     </div>
-    <div id="catList" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.07)"></div>
+    <div id="catList" style="background:#1a1a1a;border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>
   </div>
 
   <div id="pg-settings" class="page">
     <h1>Settings</h1>
     <div style="display:flex;flex-direction:column;gap:20px">
       <div><label class="tv-label">Manager / Dispatcher Name</label><input class="tv-input" id="managerNameInput" placeholder="Your name"/></div>
-      <div style="background:#eff6ff;border-radius:18px;padding:18px;border:1.5px solid #bfdbfe">
+      <div style="background:#1a2a3a;border-radius:18px;padding:18px;border:1.5px solid #bfdbfe">
         <div style="font-size:15px;font-weight:700;color:#1e40af;margin-bottom:10px">🔔 Alert System</div>
         <div style="font-size:14px;color:#3b82f6;line-height:1.8">🟡 Overdue alerts post to #tools-alerts hourly<br/>🔴 Damage alerts post instantly on check-in</div>
       </div>
@@ -298,7 +298,7 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
       <div class="modal-handle"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
         <span id="toolModalTitle" style="font-size:20px;font-weight:800;color:#18181b">New Tool</span>
-        <button onclick="closeModal('toolModal')" style="background:#f4f4f5;border:none;border-radius:10px;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
+        <button onclick="closeModal('toolModal')" style="background:#0a0a0a;border:none;border-radius:10px;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:18px">
         <div><label class="tv-label">Tool Name *</label><input class="tv-input" id="tm-name" placeholder="e.g. DeWalt 20V Circular Saw"/></div>
@@ -324,7 +324,7 @@ h2{font-size:16px;font-weight:700;color:#18181b;margin:0 0 12px}
       <div class="modal-handle"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
         <span id="siteModalTitle" style="font-size:20px;font-weight:800;color:#18181b">New Job Site</span>
-        <button onclick="closeModal('siteModal')" style="background:#f4f4f5;border:none;border-radius:10px;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
+        <button onclick="closeModal('siteModal')" style="background:#0a0a0a;border:none;border-radius:10px;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:18px">
         <div class="section-card">
@@ -474,15 +474,15 @@ function renderInventory(){
     const bl={available:'#10b981',out:'#3b82f6',damaged:'#ef4444'}[st];
     return`<div class="tv-card" style="border-left:4px solid ${bl}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#18181b">${t.name}</div><div style="font-size:13px;color:#71717a;margin-top:5px">${t.category||''}</div></div>
+        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#fff">${t.name}</div><div style="font-size:13px;color:#888;margin-top:5px">${t.category||''}</div></div>
         <span class="tv-badge" style="background:${sl.bg};color:${sl.c}">${sl.l}</span>
       </div>
       <div class="grid2" style="margin-bottom:16px">
-        ${t.serialNumber?`<div><div class="info-block-label">Serial #</div><div class="info-block-val">${t.serialNumber}</div></div>`:''}
-        ${t.assetTag?`<div><div class="info-block-label">Asset Tag</div><div class="info-block-val">${t.assetTag}</div></div>`:''}
-        <div><div class="info-block-label">Condition</div><div class="info-block-val" style="color:${condColor(t.condition)}">${t.condition}</div></div>
-        ${t.purchaseValue?`<div><div class="info-block-label">Value</div><div class="info-block-val">$${Number(t.purchaseValue).toLocaleString()}</div></div>`:''}
-        ${t.jobSite?`<div><div class="info-block-label">Job Site</div><div class="info-block-val">${t.jobSite}</div></div>`:''}
+        ${t.serialNumber?`<div><div class="info-block-label" style="color:#888">Serial #</div><div class="info-block-val">${t.serialNumber}</div></div>`:''}
+        ${t.assetTag?`<div><div class="info-block-label" style="color:#888">Asset Tag</div><div class="info-block-val">${t.assetTag}</div></div>`:''}
+        <div><div class="info-block-label" style="color:#888">Condition</div><div class="info-block-val" style="color:${condColor(t.condition)}">${t.condition}</div></div>
+        ${t.purchaseValue?`<div><div class="info-block-label" style="color:#888">Value</div><div class="info-block-val">$${Number(t.purchaseValue).toLocaleString()}</div></div>`:''}
+        ${t.jobSite?`<div><div class="info-block-label" style="color:#888">Job Site</div><div class="info-block-val">${t.jobSite}</div></div>`:''}
       </div>
       <div class="grid2">
         <button class="tv-btn tv-btn-ghost" onclick="openToolForm('${t.id}')" style="padding:13px;font-size:14px">✏️ Edit</button>
@@ -501,17 +501,17 @@ function renderRentals(){
     const bl=ov?'#f59e0b':r.rentalType==='external'?'#8b5cf6':'#3b82f6';
     return`<div class="tv-card" style="border-left:4px solid ${bl}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#18181b">${t.name||'Unknown'}</div><div style="font-size:13px;color:#71717a;margin-top:4px">${r.checkedOutBy}${r.company?' · '+r.company:''}</div></div>
+        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#fff">${t.name||'Unknown'}</div><div style="font-size:13px;color:#888;margin-top:4px">${r.checkedOutBy}${r.company?' · '+r.company:''}</div></div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
           <span class="tv-badge" style="background:${r.rentalType==='external'?'#ede9fe':'#dbeafe'};color:${r.rentalType==='external'?'#5b21b6':'#1e40af'}">${r.rentalType}</span>
           ${ov?'<span class="tv-badge" style="background:#fef3c7;color:#92400e">OVERDUE</span>':''}
         </div>
       </div>
       <div class="grid2">
-        <div><div class="info-block-label">Job Site</div><div class="info-block-val">${r.jobSite||'—'}</div></div>
-        <div><div class="info-block-label">Due Date</div><div class="info-block-val" style="color:${ov?'#d97706':'#3f3f46'}">${fmt(r.expectedReturn)}</div></div>
-        <div><div class="info-block-label">Checked Out</div><div class="info-block-val">${fmt(r.checkoutDate)}</div></div>
-        <div><div class="info-block-label">Condition</div><div class="info-block-val" style="color:${condColor(r.checkoutCondition)}">${r.checkoutCondition}</div></div>
+        <div><div class="info-block-label" style="color:#888">Job Site</div><div class="info-block-val">${r.jobSite||'—'}</div></div>
+        <div><div class="info-block-label" style="color:#888">Due Date</div><div class="info-block-val" style="color:${ov?'#d97706':'#3f3f46'}">${fmt(r.expectedReturn)}</div></div>
+        <div><div class="info-block-label" style="color:#888">Checked Out</div><div class="info-block-val">${fmt(r.checkoutDate)}</div></div>
+        <div><div class="info-block-label" style="color:#888">Condition</div><div class="info-block-val" style="color:${condColor(r.checkoutCondition)}">${r.checkoutCondition}</div></div>
       </div>
     </div>`;
   }).join('');
@@ -526,16 +526,16 @@ function renderJobSites(){
     const tc=typeC[s.type]||{bg:'#f4f4f5',c:'#3f3f46'};
     return`<div class="tv-card" style="border-left:4px solid #f59e0b">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#18181b">${s.name}</div><div style="font-size:13px;color:#71717a;margin-top:4px">📍 ${s.address||'No address'}</div></div>
+        <div style="flex:1;padding-right:12px"><div style="font-size:18px;font-weight:700;color:#fff">${s.name}</div><div style="font-size:13px;color:#888;margin-top:4px">📍 ${s.address||'No address'}</div></div>
         <span class="tv-badge" style="background:${tc.bg};color:${tc.c};flex-shrink:0">${s.type||'—'}</span>
       </div>
       <div class="grid2" style="margin-bottom:14px">
-        ${s.siteSuperintendent?`<div><div class="info-block-label">Site Super</div><div class="info-block-val">${s.siteSuperintendent}</div></div>`:''}
-        ${s.projectManager?`<div><div class="info-block-label">Project Manager</div><div class="info-block-val">${s.projectManager}</div></div>`:''}
+        ${s.siteSuperintendent?`<div><div class="info-block-label" style="color:#888">Site Super</div><div class="info-block-val">${s.siteSuperintendent}</div></div>`:''}
+        ${s.projectManager?`<div><div class="info-block-label" style="color:#888">Project Manager</div><div class="info-block-val">${s.projectManager}</div></div>`:''}
       </div>
       ${(s.gtEmployees&&s.gtEmployees.length)?`<div style="margin-bottom:12px"><div class="tv-label" style="margin-bottom:6px">GT Mann Employees</div><div>${s.gtEmployees.map(e=>`<span style="background:#18181b;color:#f59e0b;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;font-family:'DM Mono',monospace;display:inline-block;margin:2px">👷 ${e}</span>`).join('')}</div></div>`:''}
       ${(s.subTrades&&s.subTrades.length)?`<div style="margin-bottom:12px"><div class="tv-label" style="margin-bottom:6px">Sub Trades</div><div>${s.subTrades.map(t=>`<span style="background:#eff6ff;color:#2563eb;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;font-family:'DM Mono',monospace;display:inline-block;margin:2px">🏗️ ${t}</span>`).join('')}</div></div>`:''}
-      ${s.notes?`<div style="font-size:14px;color:#3f3f46;line-height:1.6;background:#f9f9f9;border-radius:12px;padding:12px 14px;margin-bottom:12px">${s.notes}</div>`:''}
+      ${s.notes?`<div style="font-size:14px;color:#3f3f46;line-height:1.6;background:#1a1a1a;border-radius:12px;padding:12px 14px;margin-bottom:12px">${s.notes}</div>`:''}
       <div class="grid2">
         <button class="tv-btn tv-btn-ghost" onclick="openSiteForm('${s.id}')" style="padding:12px;font-size:14px">✏️ Edit</button>
         <button class="tv-btn tv-btn-red" onclick="deleteSite('${s.id}')" style="padding:12px;font-size:14px">🗑️ Delete</button>
@@ -549,7 +549,7 @@ function renderCategories(){
   el('catList').innerHTML=state.categories.map((cat,i)=>`
     <div style="padding:16px 18px;border-bottom:${i<state.categories.length-1?'1px solid #f4f4f5':'none'};display:flex;align-items:center;gap:12px">
       <div style="width:8px;height:8px;background:#f59e0b;border-radius:50%;flex-shrink:0"></div>
-      <span style="flex:1;font-size:16px;font-weight:600;color:#18181b">${cat}</span>
+      <span style="flex:1;font-size:16px;font-weight:600;color:#fff">${cat}</span>
       <button onclick="deleteCategory('${cat}')" style="background:none;border:none;padding:8px;cursor:pointer;font-size:16px">🗑️</button>
     </div>`).join('');
 }
@@ -560,7 +560,7 @@ function renderAlerts(){
   el('markReadBtn').style.display=unread>0?'block':'none';
   if(!state.alerts.length){el('alertList').innerHTML='<div style="text-align:center;color:#a1a1aa;padding:40px 0">No notifications</div>';return;}
   el('alertList').innerHTML=state.alerts.map(a=>`
-    <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #f4f4f5">
+    <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #2a2a2a">
       <div style="width:40px;height:40px;border-radius:12px;background:${a.type==='damage'?'#fef2f2':'#fffbf0'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${a.type==='damage'?'🚩':'⏰'}</div>
       <div><p style="font-size:14px;color:#3f3f46;margin:0 0 4px;line-height:1.5">${a.message}</p><p style="font-size:12px;color:#a1a1aa;margin:0">${fmt(a.date)}</p></div>
     </div>`).join('');
