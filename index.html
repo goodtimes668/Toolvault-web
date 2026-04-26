@@ -295,24 +295,40 @@ function isToday(d){ return d===today(); }
 function isThisWeek(d){ const n=new Date(),s=new Date(n);s.setDate(n.getDate()-n.getDay());const e=new Date(s);e.setDate(s.getDate()+6);const dt=new Date(d+'T12:00:00');return dt>=s&&dt<=e; }
 
 async function api(path, opts={}){
-  const res = await fetch(API+path, {
-    headers:{'Content-Type':'application/json'},
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 8000);
+  try {
+    const res = await fetch(API+path, {
+      headers:{'Content-Type':'application/json'},
+      signal: controller.signal,
+      ...opts,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    clearTimeout(timer);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
 }
 
 async function loadAll(){
   el('loading').style.display='flex';
   el('app').style.display='none';
+  // Safety timeout - always show app after 6 seconds max
+  const safetyTimer = setTimeout(()=>{
+    el('loading').style.display='none';
+    el('app').style.display='block';
+    renderAll();
+  }, 6000);
   try {
     const bookings = await api('/bookings');
     S.bookings = Array.isArray(bookings) ? bookings : [];
   } catch(e) {
     S.bookings = [];
   }
+  clearTimeout(safetyTimer);
   el('loading').style.display='none';
   el('app').style.display='block';
   renderAll();
