@@ -616,7 +616,20 @@ if(page===‘bookings’) renderBookings();
 function closeModal(id){ el(id).classList.remove(‘open’); }
 
 S.selDate = today();
-loadAll();
+
+// Show app immediately, load data in background
+el(‘loading’).style.display=‘none’;
+el(‘app’).style.display=‘block’;
+renderAll();
+
+// Then fetch bookings in background
+(async()=>{
+try{
+const bookings = await api(’/bookings’);
+S.bookings = Array.isArray(bookings) ? bookings : [];
+renderAll();
+}catch(e){ console.log(‘Fetch error:’, e); }
+})();
 </script>
 
 </body>
